@@ -1,6 +1,7 @@
 export const config = {
   runtime: 'edge',
 };
+// v3
 
 export default async function handler(req) {
   if (req.method === 'OPTIONS') {
@@ -16,16 +17,18 @@ export default async function handler(req) {
   try {
     const body = await req.json();
 
+    const apiKey = (process.env.ANTHROPIC_API_KEY || '').trim();
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY.trim(),
+        'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
+        model: body.model || 'claude-sonnet-4-20250514',
+        max_tokens: body.max_tokens || 1000,
         system: body.system,
         messages: body.messages,
       }),
