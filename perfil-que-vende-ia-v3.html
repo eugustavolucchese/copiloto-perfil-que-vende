@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Copiloto IA — Perfil que Vende</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #161616;
+    --surface2: #1e1e1e;
+    --border: #2a2a2a;
+    --gold: #c9a84c;
+    --gold-light: #e8c97e;
+    --gold-dim: rgba(201,168,76,0.12);
+    --text: #f0ece4;
+    --text-muted: #7a7570;
+    --text-dim: #4a4643;
+    --green: #4caf7d;
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* HEADER */
+  header {
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 0.02em;
+  }
+
+  .logo span {
+    color: var(--text-muted);
+    font-weight: 300;
+    font-size: 0.85rem;
+    margin-left: 10px;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .progress-bar {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .progress-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: all 0.3s;
+  }
+
+  .progress-dot.done { background: var(--green); }
+  .progress-dot.active { background: var(--gold); width: 24px; border-radius: 4px; }
+
+  /* MAIN LAYOUT */
+  .container {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    flex: 1;
+    min-height: calc(100vh - 65px);
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    padding: 28px 20px;
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .sidebar-title {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+    padding-left: 8px;
+  }
+
+  .step-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    border: 1px solid transparent;
+  }
+
+  .step-item:hover { background: var(--gold-dim); color: var(--text); }
+
+  .step-item.active {
+    background: var(--gold-dim);
+    border-color: rgba(201,168,76,0.3);
+    color: var(--gold-light);
+  }
+
+  .step-item.completed { color: var(--green); }
+
+  .step-num {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    flex-shrink: 0;
+    opacity: 0.7;
+  }
+
+  .step-item.active .step-num {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: #0d0d0d;
+    opacity: 1;
+  }
+
+  .step-item.completed .step-num {
+    background: var(--green);
+    border-color: var(--green);
+    color: #0d0d0d;
+    opacity: 1;
+    font-size: 0.8rem;
+  }
+
+  /* CHAT AREA */
+  .chat-area {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 65px);
+  }
+
+  .chat-header {
+    padding: 24px 32px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .step-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--gold);
+    margin-bottom: 4px;
+  }
+
+  .step-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .step-desc {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    scroll-behavior: smooth;
+  }
+
+  .messages::-webkit-scrollbar { width: 4px; }
+  .messages::-webkit-scrollbar-track { background: transparent; }
+  .messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .msg {
+    display: flex;
+    gap: 12px;
+    animation: fadeUp 0.3s ease;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg.user { flex-direction: row-reverse; }
+
+  .avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .avatar.ia {
+    background: var(--gold-dim);
+    border: 1px solid rgba(201,168,76,0.3);
+    color: var(--gold);
+    font-family: 'Playfair Display', serif;
+  }
+
+  .avatar.user {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+
+  .bubble {
+    max-width: 600px;
+    padding: 14px 18px;
+    border-radius: 12px;
+    font-size: 0.88rem;
+    line-height: 1.65;
+  }
+
+  .msg.ia .bubble {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-top-left-radius: 4px;
+    color: var(--text);
+  }
+
+  .msg.user .bubble {
+    background: var(--gold-dim);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-top-right-radius: 4px;
+    color: var(--text);
+  }
+
+  .bubble strong { color: var(--gold-light); }
+
+  .result-card {
+    background: var(--surface);
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-top: 8px;
+  }
+
+  .result-card .label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--gold);
+    margin-bottom: 10px;
+  }
+
+  .result-card .content {
+    font-size: 0.9rem;
+    color: var(--text);
+    line-height: 1.7;
+    white-space: pre-line;
+  }
+
+  .copy-btn {
+    margin-top: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: 1px solid rgba(201,168,76,0.3);
+    color: var(--gold);
+    font-size: 0.75rem;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+  }
+  .copy-btn:hover { background: var(--gold-dim); }
+
+  /* INPUT AREA */
+  .input-area {
+    padding: 20px 32px 24px;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  .input-wrap {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    transition: border-color 0.2s;
+  }
+
+  .input-wrap:focus-within { border-color: rgba(201,168,76,0.4); }
+
+  textarea {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    resize: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    color: var(--text);
+    line-height: 1.5;
+    min-height: 22px;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+
+  textarea::placeholder { color: var(--text-dim); }
+
+  .send-btn {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    background: var(--gold);
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .send-btn:hover { background: var(--gold-light); }
+  .send-btn:disabled { background: var(--border); cursor: not-allowed; }
+
+  .send-btn svg { width: 16px; height: 16px; fill: #0d0d0d; }
+
+  .typing {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    padding: 8px 0;
+  }
+
+  .typing span {
+    width: 6px; height: 6px;
+    background: var(--gold);
+    border-radius: 50%;
+    animation: bounce 1.2s ease infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-6px); opacity: 1; }
+  }
+
+  .quick-btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .quick-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    padding: 7px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+  }
+
+  .quick-btn:hover {
+    border-color: var(--gold);
+    color: var(--gold-light);
+    background: var(--gold-dim);
+  }
+
+  /* EMPTY STATE */
+  .empty-state {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 40px;
+  }
+
+  .empty-icon {
+    font-size: 2.5rem;
+    margin-bottom: 8px;
+    opacity: 0.4;
+  }
+
+  /* NEXT STEP BTN */
+  .next-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--gold);
+    color: #0d0d0d;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 12px;
+    transition: all 0.2s;
+  }
+  .next-btn:hover { background: var(--gold-light); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    Perfil que Vende
+    <span>Copiloto IA</span>
+  </div>
+  <div class="progress-bar" id="progressBar"></div>
+</header>
+
+<div class="container">
+  <aside class="sidebar">
+    <div class="sidebar-title">7 Passos</div>
+    <div id="stepNav"></div>
+  </aside>
+
+  <div class="chat-area">
+    <div class="chat-header">
+      <div class="step-label" id="stepLabel">PASSO 0</div>
+      <div class="step-title" id="stepTitle">Bem-vindo</div>
+      <div class="step-desc" id="stepDesc"></div>
+    </div>
+
+    <div class="messages" id="messages"></div>
+
+    <div class="input-area">
+      <div class="input-wrap">
+        <textarea id="userInput" placeholder="Digite sua resposta..." rows="1"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+          <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+        </button>
+      </div>
+      <div class="quick-btns" id="quickBtns"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const STEPS = [
+  {
+    label: "Início",
+    title: "Diagnóstico do Negócio",
+    desc: "Antes de começar, me conta sobre você",
+    icon: "◈"
+  },
+  {
+    label: "Passo 1",
+    title: "Username",
+    desc: "O endereço certo para ser encontrado",
+    icon: "@"
+  },
+  {
+    label: "Passo 2",
+    title: "Nome",
+    desc: "A palavra-chave que te coloca no lugar certo",
+    icon: "✦"
+  },
+  {
+    label: "Passo 3",
+    title: "Foto de Perfil",
+    desc: "O primeiro sinal visual de autoridade",
+    icon: "◉"
+  },
+  {
+    label: "Passo 4",
+    title: "Biografia",
+    desc: "150 caracteres que vendem por você",
+    icon: "❝"
+  },
+  {
+    label: "Passo 5",
+    title: "Destaques",
+    desc: "O menu do seu negócio",
+    icon: "◎"
+  },
+  {
+    label: "Passo 6",
+    title: "Posts Fixos",
+    desc: "As 3 vitrines principais",
+    icon: "▣"
+  },
+  {
+    label: "Passo 7",
+    title: "Link na Bio",
+    desc: "Transformando visita em venda",
+    icon: "⬡"
+  }
+];
+
+// State
+let currentStep = 0;
+let completedSteps = new Set();
+let userData = {};
+let conversationHistory = [];
+let isLoading = false;
+
+// STEP PROMPTS
+function getStepSystemPrompt(step) {
+  const userContext = userData.nome ? `
+Dados do aluno coletados até agora:
+- Nome/Marca: ${userData.nome || 'não informado'}
+- O que faz: ${userData.oferta || 'não informado'}
+- Para quem: ${userData.persona || 'não informado'}
+- Resultado que entrega: ${userData.resultado || 'não informado'}
+- Credencial/diferencial: ${userData.credencial || 'não informado'}
+- Como o cliente chega: ${userData.canal || 'não informado'}
+- Username atual: ${userData.username || 'não informado'}
+  ` : '';
+
+  const base = `Você é a assistente IA do curso "Perfil que Vende". Seu papel é ajudar o aluno a EXECUTAR cada passo — não pensar em opções, mas agir.
+
+Regras de ouro:
+- Seja direta, motivadora e amigável. Fale como uma mentora que torce pelo aluno.
+- Nunca apresente múltiplas opções para o aluno "escolher". Entregue UMA sugestão concreta e explique brevemente o porquê.
+- Quando gerar textos prontos (bio, nome, etc), use markdown bold **assim** para destacar o resultado e coloque entre linhas separadas.
+- Respostas curtas e objetivas. Sem enrolação.
+- Sempre termine com um estímulo para o aluno executar agora.
+- Responda SEMPRE em português brasileiro.
+${userContext}`;
+
+  const stepPrompts = {
+    0: base + `
+Você está na fase de DIAGNÓSTICO. Precisa coletar informações do aluno em no máximo 5 perguntas (uma por vez).
+Já coletado: ${JSON.stringify(userData)}
+Perguntas que precisam ser respondidas (faça UMA por vez):
+1. Nome ou nome da marca + o que faz
+2. Para quem (persona ideal)
+3. Qual o maior resultado que um cliente teve trabalhando com você?
+4. Qual sua maior credencial, número ou diferencial?
+5. Qual username atual do Instagram?
+
+Se já tiver todas as informações, diga que o diagnóstico está completo e que pode começar o Passo 1.`,
+
+    1: base + `
+Você está no PASSO 1: USERNAME.
+Analise o username atual do aluno (${userData.username || 'não informado'}) com base nas regras:
+- Usar nome real ou marca reconhecida
+- Sem números aleatórios ou underscores em excesso
+- Fácil de falar e lembrar
+- Consistente com outros canais
+
+Se estiver bom: confirme e elogie. Se precisar ajustar: sugira UMA alternativa concreta e explique em 1 linha o porquê.
+Depois confirme o checklist e convide para o próximo passo.`,
+
+    2: base + `
+Você está no PASSO 2: CAMPO NOME (otimização para busca).
+Gere UMA sugestão de campo nome no formato: Nome + O que faz ou Para quem atende.
+Máximo 30 caracteres. Use palavras que o cliente do aluno usaria para buscar no Instagram.
+Exemplo do formato: "Ana Lima | Nutricionista Funcional"
+Apresente a sugestão em destaque, explique em 1 linha por que funciona, e convide para executar.`,
+
+    3: base + `
+Você está no PASSO 3: FOTO DE PERFIL.
+Não é possível gerar imagens, então seu papel é dar um checklist comentado personalizado baseado no que o aluno contou sobre seu mercado (${userData.oferta || ''}, persona ${userData.persona || ''}).
+Seja específica: ex: "Para consultores B2B, traje social ou smart casual transmite autoridade imediatamente."
+Liste os 3 pontos mais importantes para o perfil específico desse aluno e finalize com a ação imediata.`,
+
+    4: base + `
+Você está no PASSO 4: BIOGRAFIA — o mais importante do curso.
+Gere a bio completa com as 4 linhas, usando os dados do aluno.
+Fórmula:
+Linha 1: O que você faz (para quem) — direto
+Linha 2: O resultado que o cliente conquista
+Linha 3: Credencial ou diferencial (número, certificação, prova)
+Linha 4: Chamada para ação clara
+
+Máximo 150 caracteres no total. Apresente a bio pronta em destaque, como se fosse o perfil real. Depois explique cada linha em 1 frase. Convide para copiar e testar agora.`,
+
+    5: base + `
+Você está no PASSO 5: DESTAQUES.
+Gere o conteúdo sugerido para cada um dos 5 destaques essenciais, personalizado para o negócio do aluno:
+1. SOBRE MIM
+2. SERVIÇOS
+3. RESULTADOS
+4. CONTEÚDO
+5. CONTATO
+
+Para cada um, dê 2-3 sugestões concretas de stories que o aluno pode criar AGORA com o que já tem. Seja específico ao negócio dele.`,
+
+    6: base + `
+Você está no PASSO 6: POSTS FIXOS.
+Gere o rascunho/estrutura para cada um dos 3 posts fixos:
+1. POST DE APRESENTAÇÃO — com a Frase de Autoridade do aluno
+2. POST DE PROVA SOCIAL — estrutura para mostrar resultado de cliente
+3. POST DE CONTEÚDO DE VALOR — sugestão de tema educativo específico para o nicho
+
+Para cada post: título chamativo, gancho de abertura e ideia do conteúdo. Torne muito concreto e acionável.`,
+
+    7: base + `
+Você está no PASSO 7: LINK NA BIO — o último passo!
+Com base no negócio do aluno, indique qual opção de link é a ideal (direto WhatsApp, página de serviços, landing page ou aggregator) e EXPLIQUE por quê essa é a certa para o perfil dele.
+Se for WhatsApp: gere o link wa.me formatado.
+Se for aggregator: sugira a estrutura das 3-4 opções que deve ter.
+Finalize celebrando a conclusão do curso com energia genuína.`
+  };
+
+  return stepPrompts[step] || base;
+}
+
+// Render sidebar
+function renderSidebar() {
+  const nav = document.getElementById('stepNav');
+  nav.innerHTML = STEPS.map((s, i) => `
+    <div class="step-item ${i === currentStep ? 'active' : ''} ${completedSteps.has(i) ? 'completed' : ''}" 
+         onclick="goToStep(${i})">
+      <div class="step-num">${completedSteps.has(i) ? '✓' : (i === 0 ? '◈' : i)}</div>
+      <div>
+        <div style="font-size:0.75rem;font-weight:500">${s.label === 'Início' ? 'Diagnóstico' : s.title}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Render progress bar
+function renderProgress() {
+  const bar = document.getElementById('progressBar');
+  bar.innerHTML = STEPS.slice(1).map((_, i) => `
+    <div class="progress-dot ${completedSteps.has(i+1) ? 'done' : (currentStep === i+1 ? 'active' : '')}"></div>
+  `).join('');
+}
+
+// Update header
+function updateHeader() {
+  const step = STEPS[currentStep];
+  document.getElementById('stepLabel').textContent = step.label.toUpperCase();
+  document.getElementById('stepTitle').textContent = step.title;
+  document.getElementById('stepDesc').textContent = step.desc;
+}
+
+function goToStep(i) {
+  if (i > currentStep && !completedSteps.has(currentStep) && currentStep !== 0) return;
+  currentStep = i;
+  renderSidebar();
+  renderProgress();
+  updateHeader();
+  document.getElementById('messages').innerHTML = '';
+  conversationHistory = [];
+  document.getElementById('quickBtns').innerHTML = '';
+  
+  // Auto-start each step
+  setTimeout(() => autoStartStep(i), 300);
+}
+
+async function autoStartStep(step) {
+  if (step === 0) {
+    addMessage('ia', `Olá! Sou a sua assistente no <strong>Perfil que Vende</strong>. 🎯
+
+Antes de entrar nos 7 passos, preciso te conhecer um pouco para que tudo que eu gerar seja personalizado para o seu negócio — não um template genérico.
+
+Vamos começar com uma pergunta simples:
+
+<strong>Qual é o seu nome (ou nome da sua marca) e o que você faz?</strong>`);
+  } else {
+    const stepIntros = {
+      1: `Ótimo — chegou a hora do <strong>Passo 1: Username</strong>. 🎯\n\nQuero analisar o seu endereço digital.\n\n<strong>Qual é o seu username atual no Instagram?</strong> (o que vem depois do @)`,
+      2: `Passo 2! Agora vamos trabalhar o <strong>campo Nome</strong> — o único campo que o Instagram usa para te encontrar na busca. 🔍\n\nVou gerar uma sugestão personalizada para você. Só me confirma: <strong>o que você faz está mais voltado para B2B (empresas) ou B2C (pessoas físicas)?</strong>`,
+      3: `Passo 3 — <strong>Foto de Perfil</strong>. 📸\n\nEu não consigo ver imagens aqui, então vou te dar um diagnóstico personalizado para o seu mercado.\n\n<strong>Descreve para mim como é sua foto atual</strong> (ex: foto informal num evento, foto com roupa social, selfie, logo da empresa...)`,
+      4: `Este é o passo mais importante: a <strong>Biografia</strong>. ✍️\n\nVou gerar as 4 linhas da sua bio agora, usando tudo que você me contou no diagnóstico.\n\nSó me confirma uma coisa antes: <strong>qual é a melhor prova que você tem?</strong> Um número de clientes, uma certificação, um resultado específico — o que mais te enche de orgulho?`,
+      5: `Passo 5 — <strong>Destaques</strong>! Vamos montar o menu do seu negócio. 📌\n\nCom base no que você me contou, vou sugerir o conteúdo de cada destaque.\n\n<strong>Você já tem alguns stories salvos que poderiam virar destaques, ou precisamos criar do zero?</strong>`,
+      6: `Passo 6 — os <strong>3 Posts Fixos</strong>. São as primeiras vitrines que qualquer visitante vai ver. 🏆\n\nVou gerar a estrutura dos 3 posts para você.\n\n<strong>Você já tem algum depoimento de cliente que eu poderia usar para o post de prova social?</strong> (pode ser um trecho ou resumo)`,
+      7: `Último passo! 🎉 <strong>Link na Bio</strong> — onde tudo se conecta.\n\nVou te indicar a melhor estratégia para o seu momento.\n\n<strong>Atualmente, como a maioria dos seus clientes entram em contato com você?</strong> (WhatsApp, e-mail, site, DM...)`
+    };
+    addMessage('ia', stepIntros[step]);
+  }
+}
+
+// Add message to chat
+function addMessage(role, content, isResult = false) {
+  const messages = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  
+  const avatarText = role === 'ia' ? 'IA' : 'Eu';
+  
+  if (isResult) {
+    div.innerHTML = `
+      <div class="avatar ${role}">${avatarText}</div>
+      <div>
+        <div class="result-card">
+          <div class="label">✦ Gerado para você</div>
+          <div class="content">${content}</div>
+        </div>
+        <button class="copy-btn" onclick="copyResult(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+          Copiar resultado
+        </button>
+      </div>`;
+  } else {
+    div.innerHTML = `
+      <div class="avatar ${role}">${avatarText}</div>
+      <div class="bubble">${content.replace(/\n/g, '<br>')}</div>`;
+  }
+  
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function addTyping() {
+  const messages = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg ia';
+  div.id = 'typingIndicator';
+  div.innerHTML = `
+    <div class="avatar ia">IA</div>
+    <div class="bubble" style="padding:12px 16px">
+      <div class="typing"><span></span><span></span><span></span></div>
+    </div>`;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function removeTyping() {
+  const t = document.getElementById('typingIndicator');
+  if (t) t.remove();
+}
+
+function copyResult(btn) {
+  const content = btn.previousElementSibling.querySelector('.content').textContent;
+  navigator.clipboard.writeText(content).then(() => {
+    btn.textContent = '✓ Copiado!';
+    setTimeout(() => {
+      btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg> Copiar resultado`;
+    }, 2000);
+  });
+}
+
+// Auto-resize textarea
+const textarea = document.getElementById('userInput');
+textarea.addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+textarea.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+// Extract user data from conversation
+function extractUserData(userMsg, aiResponse, step) {
+  const msg = userMsg.toLowerCase();
+  if (step === 0) {
+    // Try to capture info progressively
+    if (!userData.username && (msg.includes('@') || conversationHistory.length >= 8)) {
+      const match = userMsg.match(/@?([a-zA-Z0-9_.]+)/);
+      if (match) userData.username = match[1];
+    }
+  }
+  if (step === 1) {
+    const match = userMsg.match(/@?([a-zA-Z0-9_.]+)/);
+    if (match) userData.username = match[1];
+  }
+}
+
+async function sendMessage() {
+  const input = document.getElementById('userInput');
+  const msg = input.value.trim();
+  if (!msg || isLoading) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+  addMessage('user', msg);
+  document.getElementById('quickBtns').innerHTML = '';
+
+  conversationHistory.push({ role: 'user', content: msg });
+  extractUserData(msg, '', currentStep);
+
+  isLoading = true;
+  document.getElementById('sendBtn').disabled = true;
+  addTyping();
+
+  try {
+    const response = await fetch('https://perfilquevende.eugustavolucchese.workers.dev', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: getStepSystemPrompt(currentStep),
+        messages: conversationHistory
+      })
+    });
+
+    const data = await response.json();
+    removeTyping();
+
+    const aiText = data.content?.[0]?.text || 'Desculpe, tive um problema. Tente novamente.';
+    
+    conversationHistory.push({ role: 'assistant', content: aiText });
+
+    // Check if it's a result (bio, nome, etc)
+    const isResult = currentStep >= 2 && (
+      aiText.includes('**') || 
+      aiText.toLowerCase().includes('bio:') ||
+      aiText.toLowerCase().includes('sugestão:') ||
+      aiText.toLowerCase().includes('resultado gerado')
+    );
+
+    // Format text
+    const formatted = aiText
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+    if (isResult && currentStep >= 2) {
+      addMessage('ia', formatted, false);
+    } else {
+      addMessage('ia', formatted);
+    }
+
+    // Extract user data from AI's collected info
+    if (currentStep === 0) {
+      // Check if diagnosis is complete
+      if (aiText.toLowerCase().includes('diagnóstico') && aiText.toLowerCase().includes('complet')) {
+        completedSteps.add(0);
+        renderSidebar();
+        // Show next step button
+        showNextStepButton();
+      }
+    } else if (conversationHistory.length >= 4) {
+      // After some back and forth, show next step
+      if (currentStep < 7 && conversationHistory.filter(m => m.role === 'assistant').length >= 2) {
+        showNextStepButton();
+      } else if (currentStep === 7 && conversationHistory.filter(m => m.role === 'assistant').length >= 2) {
+        completedSteps.add(7);
+        renderSidebar();
+        renderProgress();
+      }
+    }
+
+  } catch (err) {
+    removeTyping();
+    addMessage('ia', 'Ops! Ocorreu um erro de conexão. Tente enviar sua mensagem novamente. 🔄');
+    console.error(err);
+  }
+
+  isLoading = false;
+  document.getElementById('sendBtn').disabled = false;
+}
+
+function showNextStepButton() {
+  if (currentStep >= 7) return;
+  
+  const messages = document.getElementById('messages');
+  // Check if button already exists
+  if (document.getElementById('nextStepBtn')) return;
+
+  const div = document.createElement('div');
+  div.style.display = 'flex';
+  div.style.justifyContent = 'center';
+  div.style.padding = '8px 0';
+  div.innerHTML = `
+    <button class="next-btn" id="nextStepBtn" onclick="advanceStep()">
+      Ir para o ${currentStep === 0 ? 'Passo 1' : 'Próximo Passo'} →
+    </button>`;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function advanceStep() {
+  completedSteps.add(currentStep);
+  currentStep = Math.min(currentStep + 1, 7);
+  renderSidebar();
+  renderProgress();
+  updateHeader();
+  document.getElementById('messages').innerHTML = '';
+  conversationHistory = [];
+  document.getElementById('quickBtns').innerHTML = '';
+  setTimeout(() => autoStartStep(currentStep), 300);
+}
+
+// INIT
+renderSidebar();
+renderProgress();
+updateHeader();
+setTimeout(() => autoStartStep(0), 500);
+</script>
+</body>
+</html>
